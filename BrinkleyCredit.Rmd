@@ -1,0 +1,115 @@
+---
+title: "Brinkley Credit"
+output: html_document
+date: "2024-10-03"
+---
+
+```{r Data and Quick Look}
+CreditData <- read_csv("C:/Users/miabr/OneDrive/Desktop/BAN 502 Predictive/CreditData.csv")
+```
+
+```{r Library, warnings=FALSE,message=FALSE}
+library(readr)
+library(tidyverse)
+library(GGally)
+library(gridExtra)
+library(ggcorrplot)
+library(tidymodels)
+library(glmnet)
+library()
+library()
+library()
+library()
+library()
+library()
+library()
+```
+
+```{r Look at Data}
+summary(CreditData)
+str(CreditData)
+ggpairs(CreditData)
+```
+
+```{r Plot of Model}
+ggplot(data = CreditData, aes(x = AnnualIncome, y = AnnualCharges)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "yellow") +
+  theme_bw()
+```
+
+# Linear Regression
+
+```{r Build Regression Model for best variable being Annual Charges}
+credit_recipe = recipe(AnnualCharges ~ AnnualIncome, CreditData) #Creating Recipe
+
+lm_model = 
+  linear_reg() %>% 
+  set_engine("lm")
+
+lm_wflow =
+  workflow() %>%
+  add_model(lm_model) %>%
+  add_recipe(credit_recipe)
+
+lm_fit = fit(lm_wflow, CreditData)
+```
+
+```{r Summary Linear using Annual Charges to Predict Annual Charges}
+summary(lm_fit$fit$fit$fit)
+```
+
+```{r Testing Annual Income Data for 50 and 100 thousand}
+testdata = data.frame(AnnualIncome = c(50,100))
+predict(lm_fit, new_data = testdata)
+```
+
+```{r Prediction Intervals and Graph}
+temp_var = predict(lm_fit$fit$fit$fit, interval = "prediction")
+new_df = cbind(CreditData, temp_var)
+
+ggplot(new_df, aes(x = AnnualIncome, y = AnnualCharges)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "yellow") +
+  geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
+  geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+  theme_bw()
+```
+
+# Model Validation
+
+```{r Splitting the Data}
+set.seed(123)
+credit1_split = initial_split(CreditData, prop = 0.8, strata = AnnualCharges)
+train = training(credit_split)
+test = testing(credit_split)
+```
+
+```{r Visualize Response Variable}
+ggpairs(train)
+```
+
+```{r Best Variable Model}
+credit_recipe1 = recipe(AnnualCharges ~ AnnualIncome, train)
+
+lm_model1 =
+  linear_reg() %>%
+  set_engine("lm")
+
+lm_wflow1 = 
+  workflow() %>%
+  add_model(lm_model1) %>%
+  add_recipe(credit_recipe1)
+
+lm_fit1 = fit(lm_wflow1, train)
+```
+
+```{r Summary Validation using Annual Charges to Predict Annual Charges}
+summary(lm_fit1$fit$fit$fit)
+```
+
+```{r Test Results show no overfit}
+lm_fit1 %>%
+  predict(test) %>% bind_cols(test) %>% metrics(truth = AnnualCharges, estimate = .pred)
+```
+
